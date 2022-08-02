@@ -1,137 +1,159 @@
 import logo from './logo.svg';
+import './App.css';
+import ReservationList from './components/ReservationList';
+import AddReservationForm from './components/AddReservationForm';
+import {useState, useEffect} from 'react';
+import apiClient from './http-common';
+import {BrowserRouter,Route, Routes,Link} from 'react-router-dom';
+import EditReservationForm from './components/EditReservationForm';
+import { Badge, Container } from 'react-bootstrap';
+import './index'
 
-import './App.css'
-import UserList from './components/UserList';
-import { useState,useEffect } from 'react';
-import apiClient from './http-common'
-import {BrowserRouter, Routes ,Route ,  Link ,useNavigate } from 'react-router-dom'
-import AddUserForm from './components/AddUserForm';
-import EditUserForm from './components/EditUserForm';
-import axios from 'axios';
 function App() {
-  
-const [userData,setUser]=useState([]);
+  const [reservations,setReservations]=useState([]);
 
-    //when App component gets loaded , a call to api will render the products list as a response
-    //which we are setting to the products
-    useEffect(()=>{apiClient.get('/').then((response)=>{
-      setUser(response.data);
-    })},[])
+  //const reservations=useSelector((state)=>state.reservations)
 
-    
-const [editing,setEditing]=useState(false);
+  useEffect(()=>{apiClient.get("/viewAll").then((response)=>{
+    setReservations(response.data);
+  })},[])
 
-const initialFormState = {
-  userLoginId:0,
-    userName:'',
-    password:'',
-    firstName:'',
-    lastName:'',
-    contact:'',
-    email:''
-}
-const [currentUser,setCurrentuser] 
+  const [editing,setEditing]=useState(false);
+
+  const initialFormState ={
+    reservationId:'0',
+    reservationType:'',
+    source:'',
+    destination:''
+
+  }
+
+  const [currentReservation,setCurrentReservation] 
      =useState(initialFormState);
 
-   //child component --AddProductForm child -App is parent ,product object in the form of input fields form 
-   //brand price name on submission  
-async function addUser(user){
-  try{
-  const response=await apiClient.post('/',user);
-    setUser([...userData,response.data]);
-    console.log(user);
+     async function addReservation(reservation){
+      try{
+      const response=await apiClient.post('/addReservation',reservation);
+        setReservations([...reservations,response.data]);
+        console.log(reservations);
+        
+      }catch(err){
+        console.log(err)
+      }
+      
+    }
+
+    async function deleteReservation(reservationId){
+      await apiClient.delete(`/${reservationId}`);
+        setReservations(reservations.filter((reservation)=>reservation.reservationId !== reservationId));
+      }
+      
+      const editReservation=(reservation)=>{
     
-  }catch(err){
-    console.log(err)
-  }
-  
-}
+        setEditing(true);
+          setCurrentReservation
+          ({reservationId:reservation.reservationId,reservationType:reservation.reservationType,
+            source:reservation.source, destination:reservation.destination})
+         
+      }
+      
+      const updateReservation = (reservationId,updatedReservation)=>{
+      
+        setEditing(false);
+        apiClient.patch(`/${reservationId}`,updatedReservation).then((response)=>
+        {
+      
+          console.log('reservation updated');
+          setReservations(reservations.map((reservation)=>
+        (reservation.reservationId === reservationId ? updateReservation : reservation)));
+        })
+        
+      }
 
-
-
-async function deleteUser(userLoginId){
-  await apiClient.delete(`/${userLoginId}`);
-    setUser(userData.filter((user)=>userData.userLoginId !== userLoginId));
-  }
-  
-  const editUser=(user)=>{
-
-    setEditing(true);
-      setCurrentuser
-      ({userLoginId:user.userLoginId,userName:user.userName,password:user.password,
-        firstName:user.firstName,lastName:user.lastName,contact:user.contact,email:user.email})
-     
-  }
-  
-  const updateUser = (userLoginId,userName,updatedUser)=>{
-  
-    setEditing(false);
-    apiClient.put(`/${userLoginId}/${userName}`,updatedUser).then((response)=>
-    {
-  
-      console.log('user updated');
-      setUser(userData.map((user)=>
-    (user.userLoginId === userLoginId ? updatedUser : user)));
-    })
+    const findByDate=(date,data)=>{
+      setEditing(true);
+      apiClient.post(`/${date}`,data).then((response)=>{
+        console.log('reservation date updated')
+        setReservations(reservations.map((reservation)=>
+        (reservation.date===date ? findByDate :date)));
+      })
+      
+    }
     
-  }
-  
-  
-  
-  
-  return (<div>
-    <div className='container'>
-    <h1>User Crud app with hooks</h1>
+
+  return (
+    
+    
+    <div>
+    <div className='col-md-3 center'>
+      <Container fluid>
+    <h1 style={{ color: "yellow" }}>
+    RESERVATION SYSTEM 
+       
+      </h1>
+      </Container>
     <div className='flex-row'>
       <div className='flex-large'>
         {editing ? (
         <div>
-          <h2>Edit User Form </h2>
-          <EditUserForm
+          <h3>Edit Reservation Form </h3>
+          <EditReservationForm
            setEditing={setEditing}
-           currentUser={currentUser}
-           updateUser={updateUser}
+           currentReservation={currentReservation}
+           updateReservation={updateReservation}
            />
            </div>):(
 
     <BrowserRouter>
-    <nav className="navbar navbar-expand navbar-dark bg-dark">
-        <a href="/route" className="navbar-brand">
-          React App
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+
+    
+        <a href="/addReservation" className="navbar-brand">
+        React App
         </a>
-        <div className="navbar-nav mr-auto">
-          <li className="nav-item">
-            <Link to={"/user"} className="nav-link">
-              User
+        <div className="navbar-nav mr-auto" >
+          
+          <li className="nav-item"  >
+            <Link to={"/addReservation"} className="nav-link" style={{ color: "red" }}>
+              ADD RESERVATION FORM
             </Link>
-          </li>
+          </li><br></br>
           <li className="nav-item">
-            <Link to={"/addUser"} className="nav-link">
-              Add User
+            <Link to={"/viewAll"} className="nav-link" style={{ color: "red" }}>
+              RESERVATION LIST
             </Link>
-          </li>
+          </li><br></br>
         </div>
-      </nav>
+      </nav><br></br>
       <div className="container mt-3">
         <Routes>
-        <Route path='/' element={<UserList 
-    userData={userData} 
-         editUser={editUser}
-         deleteUser={deleteUser} />} ></Route>
-          <Route exact path="AddUser" element={<AddUserForm addUser={addUser}/>} />
+        <Route path='/' element={<ReservationList 
+    reservationData={reservations} 
+         editReservation={editReservation}
+         deleteReservation={deleteReservation} />} ></Route>
+          <Route exact path="/addReservation" element={<AddReservationForm addReservation={addReservation}/>} />
          
-         <Route path='/user' element={<UserList 
-    userData={userData} 
-         editUser={editUser}
-         deleteUser={deleteUser} />}>
+         <Route path='/viewAll' element={<ReservationList  
+    reservationData={reservations} 
+         editReservation={editReservation}
+         deleteReservation={deleteReservation} />}>
 
          </Route>
-         <Route path="/user/:userLoginId" element={<EditUserForm /> }></Route>
+         <Route path="/reservations/:reservationId" element={<EditReservationForm /> }></Route>
         </Routes>
       </div>
-    
+      
+  
+
     </BrowserRouter>
-    )}</div></div></div></div>
-)}
+    ) }</div>
+    </div></div></div>
+    
+   
+  )
+}
 
 export default App;
+
+
+
